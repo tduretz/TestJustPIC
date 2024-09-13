@@ -1,0 +1,10 @@
+name = "TestJustPIC"
+uuid = "8f02f5f9-3d2c-46f0-af88-fee3f5b0f78d"
+authors = ["tduretz <duretz@uni-frankfurt.de>"]
+version = "0.1.0"
+
+[deps]
+JustPIC = "10dc771f-8528-4cd9-9d3b-b21b2e693339"
+MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
+ParallelStencil = "94395366-693c-11ea-3b26-d9b7aac5d958"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
