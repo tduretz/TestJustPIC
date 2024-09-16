@@ -36,8 +36,8 @@ function main()
     Nc = (x=40, y=40, z=40  )
     Nv = (x=Nc.x+1,   y=Nc.y+1,   z=Nc.z+1  )
     Δ  = (x=L.x/Nc.x, y=L.y/Nc.y, z=L.z/Nc.z  )
-    Nt   = 10000
-    Nout = 100
+    Nt   = 40000
+    Nout = 1000
     C    = 0.25
 
     verts     = (x=LinRange(0, L.x, Nv.x), y=LinRange(0, L.y, Nv.y), z=LinRange(0, L.z, Nv.z))
@@ -86,13 +86,13 @@ function main()
 
     for it=1:Nt
 
-        # advection!(particles, RungeKutta2(), V, (grid_vx, grid_vy), Δt)
-        # advection_LinP!(particles, RungeKutta2(), V, (grid_vx, grid_vy), Δt)
+        # advection!(particles, RungeKutta2(), V, (grid_vx, grid_vy, grid_vz), Δt)
+        # advection_LinP!(particles, RungeKutta2(), V, (grid_vx, grid_vy, grid_vz), Δt)
         advection_MQS!(particles, RungeKutta2(), V, (grid_vx, grid_vy, grid_vz), Δt)
         move_particles!(particles, values(verts), particle_args)        
         # inject_particles!(particles, particle_args, values(verts)) 
 
-        if mod(it,Nout) == 0
+        if mod(it,Nout) == 0 || it==1
 
             @show Npart = sum(particles.index.data)
             particle_density = [sum(p) for p in particles.index]
@@ -113,14 +113,15 @@ function main()
             ax4 = Axis(f[2, 3], title="iz=40", aspect=1.0)
 
             # f,ax,h=scatter(Array(pxv[idxv]), Array(pyv[idxv]), color=Array(clr[idxv]), colormap=:roma, markersize=2)
-            # f,ax,h=arrows(cents.x, cents.y, Vxc[:,:,2]./Vmag[:,:,2], Vyc[:,:,2]./Vmag[:,:,2], arrowsize = 5, lengthscale = 1e-2)
-            # f,ax,h=arrows(cents.x, cents.z, Vxc[:,:,2]./Vmag[:,:,2], Vzc[:,:,2]./Vmag[:,:,2], arrowsize = 5, lengthscale = 1e-2)
-            hm1 = heatmap!(ax1, cents.x, cents.y, particle_density[:,:, 5])
-            hm2 = heatmap!(ax2, cents.x, cents.y, particle_density[:,:,15])
-            hm3 = heatmap!(ax3, cents.x, cents.y, particle_density[:,:,25])
-            hm4 = heatmap!(ax4, cents.x, cents.y, particle_density[:,:,35])
+            # f,ax,h=heatmap(cents.x, cents.y, Vmag[:,:,1])
+            # f,ax,h=arrows(cents.x, cents.y, Vxc[:,:,40]./Vmag[:,:,40], Vyc[:,:,40]./Vmag[:,:,20], arrowsize = 5, lengthscale = 1e-2)
+            # f,ax,h=arrows(cents.x, cents.z, Vxc[:,:,20]./Vmag[:,:,2], Vzc[:,:,2]./Vmag[:,:,2], arrowsize = 5, lengthscale = 1e-2)
+            hm1 = heatmap!(ax1, cents.x, cents.y, particle_density[:,:, 5], colormap=:inferno, colorrange=(0., 35.))
+            hm2 = heatmap!(ax2, cents.x, cents.y, particle_density[:,:,15], colormap=:inferno, colorrange=(0., 35.))
+            hm3 = heatmap!(ax3, cents.x, cents.y, particle_density[:,:,25], colormap=:inferno, colorrange=(0., 35.))
+            hm4 = heatmap!(ax4, cents.x, cents.y, particle_density[:,:,35], colormap=:inferno, colorrange=(0., 35.))
             Colorbar(f[1, 2], hm1)
-            Colorbar(f[1, 4], hm4)
+            Colorbar(f[1, 4], hm2)
             Colorbar(f[2, 2], hm3)
             Colorbar(f[2, 4], hm4)
             display(f)

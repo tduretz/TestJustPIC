@@ -1,4 +1,4 @@
-using Plots, MAT, Printf
+using CairoMakie, MAT, Printf
 using Base.Threads
 using JustPIC, JustPIC._2D
 using ParallelStencil
@@ -32,8 +32,8 @@ end
 function main()
 
     @printf("Running on %d thread(s)\n", nthreads())
-    L  = (x=100., y=100.)
-    Nc = (x=40,   y=40  )
+    L  = (x=1., y=1.)
+    Nc = (x=40, y=40  )
     Nv = (x=Nc.x+1,   y=Nc.x+1  )
     Δ  = (x=L.x/Nc.x, y=L.y/Nc.y  )
     Nt   = 40000
@@ -48,7 +48,7 @@ function main()
     file = matopen("data/CornerFlow2D.mat")
     Vx   = read(file, "Vx") # ACHTUNG THIS CONTAINS GHOST NODES AT NORTH/SOUTH
     Vy   = read(file, "Vy") # ACHTUNG THIS CONTAINS GHOST NODES AT EAST/WEST
-    Pt   = read(file, "P")
+    Pt   = read(file, "Pt")
     close(file)
 
     # Initialize particles -------------------------------
@@ -79,13 +79,13 @@ function main()
 
     for it=1:Nt
 
-        # advection!(particles, RungeKutta2(), V, (grid_vx, grid_vy), Δt)
+        advection!(particles, RungeKutta2(), V, (grid_vx, grid_vy), Δt)
         # advection_LinP!(particles, RungeKutta2(), V, (grid_vx, grid_vy), Δt)
-        advection_MQS!(particles, RungeKutta2(), V, (grid_vx, grid_vy), Δt)
+        # advection_MQS!(particles, RungeKutta2(), V, (grid_vx, grid_vy), Δt)
         move_particles!(particles, values(verts), particle_args)        
         # inject_particles!(particles, particle_args, values(verts)) 
 
-        if mod(it,Nout) == 0
+        if mod(it,Nout) == 0 || it==1
 
             @show Npart = sum(particles.index.data)
             particle_density = [sum(p) for p in particles.index]
@@ -97,15 +97,20 @@ function main()
             pyv = ppy.data[:]
             clr = phases.data[:]
             idxv = particles.index.data[:]
-            # f,ax,h=scatter(Array(pxv[idxv]), Array(pyv[idxv]), color=Array(clr[idxv]), colormap=:roma, markersize=1)
             
-            p1 = heatmap(verts.x,     cents_ext.y, Vx'*1e+9, title="Vx",    aspect_ratio=1, xlims=(verts.x[1], verts.x[end]))
-            p2 = heatmap(cents_ext.x, verts.y,     Vy'*1e+9, title="Vy",    aspect_ratio=1, xlims=(verts.x[1], verts.x[end]))
-            p3 = heatmap(cents.x,     cents.y,     Pt'*1e-9, title="P" ,    aspect_ratio=1, xlims=(verts.x[1], verts.x[end]))
-            # p4 = scatter(Array(pxv[idxv]), Array(pyv[idxv]); zcolor=clr[idxv], title="parts", label=:none, aspect_ratio=1, xlims=(verts.x[1], verts.x[end]), markersize=0.8, markerstrokewidth=0, color=:roma)  
-            p4 = heatmap(cents.x,     cents.y, particle_density, title="part. density",    aspect_ratio=1, xlims=(verts.x[1], verts.x[end]))
-            display(plot(p1,p2,p3,p4))
-            # display(plot(p4))
+            f = Figure()
+            ax1 = Axis(f[1, 1], title="Particles", aspect=1.0)
+            ax2 = Axis(f[1, 2], title="Density", aspect=1.0)
+
+            scatter!(ax1, Array(pxv[idxv]), Array(pyv[idxv]), color=Array(clr[idxv]), colormap=:roma, markersize=1)
+
+            # f,ax,h=scatter(Array(pxv[idxv]), Array(pyv[idxv]), color=Array(clr[idxv]), colormap=:roma, markersize=2)
+            # f,ax,h=heatmap(cents.x, cents.y, Vmag[:,:,1])
+            # f,ax,h=arrows(cents.x, cents.y, Vxc[:,:,40]./Vmag[:,:,40], Vyc[:,:,40]./Vmag[:,:,20], arrowsize = 5, lengthscale = 1e-2)
+            # f,ax,h=arrows(cents.x, cents.z, Vxc[:,:,20]./Vmag[:,:,2], Vzc[:,:,2]./Vmag[:,:,2], arrowsize = 5, lengthscale = 1e-2)
+            hm = heatmap!(ax2, cents.x, cents.y, particle_density[:,:], colormap=:inferno, colorrange=(0., 35.))
+            Colorbar(f[1, 3], hm)
+            display(f)
 
         end
     end
